@@ -1,0 +1,11 @@
+terminaltables
+click
+colorama
+numpy>=1.16
+pyarrow==0.13.0
+pandas>=0.24.0
+grpcio>=1.19.0
+protobuf>=3.7.0
+humanize
+tenacity
+pycryptodome
