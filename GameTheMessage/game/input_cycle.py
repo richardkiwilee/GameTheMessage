@@ -20,9 +20,10 @@ class InputCycle:
         self.hc = HostCommand()
         self.pub = PublicCommand()
         self.pri = PrivateCommand()
+        self.name = name
         self.msg_builder = MsgBuilder(name)
 
-    def input_cycle(self, sock_server, pipe_server, pipe_host, pipe_port, p1, p2=None):
+    def input_cycle(self, sock_server, pipe_server, pipe_host, pipe_port, p1, p2=None, game_inst=None):
         while True:
             try:
                 data = sys.stdin.readline()
@@ -53,6 +54,10 @@ class InputCycle:
                         HostCommand.edit(self.setting, self.setting_path)
                     elif data == 'start':
                         HostCommand.start(self.msg_builder, self.setting_path, (pipe_host, pipe_port))
+                elif data == 'turn' and game_inst is not None:
+                    print(game_inst.get_turn())
+                elif data == 'card' and game_inst is not None:
+                    print(game_inst.get_card(self.name))
                 else:
                     self.logger.info('无效的命令')
 

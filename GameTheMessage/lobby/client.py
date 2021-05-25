@@ -73,7 +73,7 @@ def join_lobby(setting):
     p.daemon = True
     p.start()
     c = InputCycle(setting, name=name, game_inst=game_inst)
-    c.input_cycle(sock_client, pipe_server, setting.get('HOST', 'SOCKET_HOST'), CLI_PIPE_PORT, p)
+    c.input_cycle(sock_client, pipe_server, setting.get('HOST', 'SOCKET_HOST'), CLI_PIPE_PORT, p, game_inst=game_inst)
     # while True:
     #     _input = input('->')
     #     if _input == 'exit':

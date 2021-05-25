@@ -46,14 +46,20 @@ class HostMgr:
                 else:
                     # 接收客户端信息
                     # 将客户端信息发送到所有的客户端中去
-                    self.logger.info('接收到了客户端发送来的消息。')
                     try:
                         _data = r.recv(BUFFERSIZE)
+                        self.logger.info(f'接收到了客户端发送来的消息: {json.loads(_data)}')
                         # 服务端接受客户端的消息 进行处理 后将结果发送到所有客户端
                         # ret = handle(_data)
-                        ret = random.randint(0, 10)
+                        if json.loads(_data).get('data') == '进入了房间。':
+                            user = json.loads(_data).get('user')
+                            self.game.add_player(user)
+                            self.game.draw(user)
+                            ret = {"id": random.randint(0, 10), 'msg': f'{user}抽了2张牌。'}
+                        else:
+                            ret = {"id": random.randint(0, 10), 'msg': 'test'}
                         for c in self.rlist[2:]:
-                            c.send(bytes(json.dumps({"id": ret, 'msg': 'test'}), "UTF-8"))
+                            c.send(bytes(json.dumps(ret), "UTF-8"))
                             # self.game.add()
                     except Exception as ex:
                         logging.warning(ex)
