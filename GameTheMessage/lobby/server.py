@@ -1,27 +1,14 @@
 from select import select
 from multiprocessing import Process
-from rumor.lobby.settings import *
-import shelve
+from GameTheMessage.lobby.settings import *
 import logging
 import logging.config
-from rumor.game.core import Game
-from rumor.game.input_cycle import InputCycle
 import json
 import configparser
 from multiprocessing.managers import BaseManager
-import sys
 import random
-# https://my.oschina.net/u/4258573/blog/3327582
-
-class TestGame:
-    def __init__(self):
-        self.data = {'mid': 0}
-
-    def get(self):
-        return self.data
-
-    def add(self):
-        self.data['mid'] += 1
+from GameTheMessage.game.desktop import Desktop
+from GameTheMessage.game.input_cycle import InputCycle
 
 
 class MyManager(BaseManager):
@@ -30,7 +17,7 @@ class MyManager(BaseManager):
 
 class HostMgr:
     def __init__(self, _sock_server, _pipe_server, game_inst):
-        self.game = game_inst   # type: TestGame
+        self.game = game_inst   # type: Desktop
         self.sock_server = _sock_server
         self.pipe_server = _pipe_server
         self.rlist = [_sock_server, _pipe_server]
@@ -53,37 +40,38 @@ class HostMgr:
                     conn, addr = self.pipe_server.accept()
                     _data = conn.recv(BUFFERSIZE)
                     self.logger.info('接受键盘输入')      # 服务端输入add的时候走到这里
-                    if random.randint(0, 1):
-                        for c in self.rlist[2:]:
-                            c.send(_data)
-                    else:
-                        # 这里需要与外部保持一致
-                        self.logger.info('服务端键盘输入被拒绝')
+                    for c in self.rlist[2:]:
+                        c.send(_data)
                     conn.close()
                 else:
                     # 接收客户端信息
                     # 将客户端信息发送到所有的客户端中去
-                    self.logger.info('客户端接收到了消息')
+                    self.logger.info('接收到了客户端发送来的消息。')
                     try:
                         _data = r.recv(BUFFERSIZE)
+                        # 服务端接受客户端的消息 进行处理 后将结果发送到所有客户端
+                        # ret = handle(_data)
+                        ret = random.randint(0, 10)
+                        for c in self.rlist[2:]:
+                            c.send(bytes(json.dumps({"id": ret, 'msg': 'test'}), "UTF-8"))
+                            # self.game.add()
                     except Exception as ex:
                         logging.warning(ex)
                         r.close()
                         self.rlist.remove(r)
-                    else:
-                        if json.loads(_data).get('data') == 'add' and random.randint(0, 1):
-                            self.logger.info('客户端请求被接受发送到所有client: ' + json.loads(_data).get('data'))
-                            for c in self.rlist[2:]:
-                                c.send(_data)
-                            self.game.add()
-                        else:
-                            self.logger.info('客户端请求被拒绝.')
 
 
-def listen(_sock_server, _pipe_server, game_inst):
+def listen(_sock_server, _pipe_server, inst):
     # IO多路复用：循环监听套接字
-    h = HostMgr(_sock_server, _pipe_server, game_inst)
+    h = HostMgr(_sock_server, _pipe_server, inst)
     h.start()
+
+
+def remote_manager(inst):
+    MyManager.register('DesktopInst', callable=lambda: inst)
+    m = MyManager(address=('127.0.0.1', 6666), authkey=b'abracadabra')
+    s = m.get_server()
+    s.serve_forever()
 
 
 def create_lobby(config: str):
@@ -97,14 +85,28 @@ def create_lobby(config: str):
     sock_server = server((setting.get('HOST', 'SOCKET_HOST'), setting.getint('HOST', 'SOCK_PORT')))
     pipe_server = server((setting.get('HOST', 'SOCKET_HOST'), setting.getint('HOST', 'SER_PIPE_PORT')))
     # 开始一个子进程，执行listen函数
-    MyManager.register('GameInst', TestGame)
+    MyManager.register('DesktopInst', Desktop)
     manager = MyManager()
     manager.start()
-    game_inst = manager.GameInst()      # type: TestGame
+    game_inst = manager.DesktopInst()      # type: Desktop
 
-    p = Process(target=listen, args=(sock_server, pipe_server, game_inst))
-    p.daemon = True
-    p.start()
+    p1 = Process(target=listen, args=(sock_server, pipe_server, game_inst))
+    p2 = Process(target=remote_manager, args=(game_inst, ))
+    p1.daemon = True
+    p1.start()
+    p2.daemon = True
+    p2.start()
+    logging.basicConfig(level=logging.NOTSET, format='%(asctime)s - 服务端主循环 - %(levelname)s: %(message)s')
+    logger = logging.getLogger()
+    # while True:
+    #     _input = input('->')
+    #     if _input == 'exit':
+    #         p1.terminate()
+    #         p2.terminate()
+    #         logger.info('退出...')
+    #         break
+    #     if _input == 'turn':
+    #         logger.info(game_inst.get_turn())
     c = InputCycle(setting, name='房主大人', setting_path=config, game_inst=game_inst)
-    c.input_cycle2(sock_server, pipe_server,
-                  setting.get('HOST', 'SOCKET_HOST'), setting.getint('HOST', 'SER_PIPE_PORT'), p)
+    c.input_cycle(sock_server, pipe_server,
+                   setting.get('HOST', 'SOCKET_HOST'), setting.getint('HOST', 'SER_PIPE_PORT'), p1, p2)

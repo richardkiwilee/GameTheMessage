@@ -1,11 +1,11 @@
 import sys
 import logging
 import logging.config
-from rumor.lobby.settings import client, server
-from rumor.lobby.settings import clear_all
-from rumor.game.command import HostCommand, PublicCommand, PrivateCommand, QUIT_COMMAND
-from rumor.game.core import Game
-from rumor.game.game_msg import MsgBuilder
+from GameTheMessage.lobby.settings import client, server
+from GameTheMessage.lobby.settings import clear_all
+from GameTheMessage.game.command import HostCommand, PublicCommand, PrivateCommand, QUIT_COMMAND
+from GameTheMessage.game.desktop import Desktop
+from GameTheMessage.game.game_msg import MsgBuilder
 import json
 
 
@@ -22,7 +22,7 @@ class InputCycle:
         self.pri = PrivateCommand()
         self.msg_builder = MsgBuilder(name)
 
-    def input_cycle(self, sock_server, pipe_server, pipe_host, pipe_port, p):
+    def input_cycle(self, sock_server, pipe_server, pipe_host, pipe_port, p1, p2=None):
         while True:
             try:
                 data = sys.stdin.readline()
@@ -36,7 +36,9 @@ class InputCycle:
                 if data == QUIT_COMMAND:
                     sock_server.close()
                     pipe_server.close()
-                    p.terminate()
+                    p1.terminate()
+                    if p2 is not None:
+                        p2.terminate()
                     clear_all()
                     break
                 if PublicCommand.is_command(data):

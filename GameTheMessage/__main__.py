@@ -1,4 +1,4 @@
-from rumor.cli import cli
+from GameTheMessage.cli import cli
 
 if __name__ == "__main__":
     cli()

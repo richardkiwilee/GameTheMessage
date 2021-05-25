@@ -3,8 +3,8 @@ import logging.config
 from terminaltables import AsciiTable
 import os
 import configparser
-from rumor.game.game_msg import MsgBuilder
-from rumor.lobby.settings import client
+from GameTheMessage.game.game_msg import MsgBuilder
+from GameTheMessage.lobby.settings import client
 
 QUIT_COMMAND = 'quit.'
 

@@ -1,16 +1,16 @@
 from select import select
 from multiprocessing import Process
 from .settings import *
-from rumor.lobby.server import InputCycle
 import json
 import logging
 import logging.config
-from rumor.game.game_msg import MsgBuilder
 from multiprocessing.managers import BaseManager
+from GameTheMessage.game.desktop import Desktop
+from GameTheMessage.game.input_cycle import InputCycle
 
 
 def connect(sock_client, pipe_server, game_inst):
-    game = game_inst        # type: TestGame
+    game = game_inst        # type: Desktop
     # IO多路复用：循环监听套接字
     logging.basicConfig(level=logging.NOTSET, format='%(asctime)s - %(filename)s - %(levelname)s: %(message)s')
     logger = logging.getLogger()
@@ -25,17 +25,16 @@ def connect(sock_client, pipe_server, game_inst):
                 # 接受服务器消息 根据类型对game对象进行操作并输出信息等
                 # logger.info('接受服务端消息：' + MsgBuilder.decode(data).get('data'))
                 logger.info('接受服务端消息：' + data)
-                for _data in data.split('}'):       # type: str
-                    if _data == '':
-                        continue
-                    _data += '}'
-                    _data = json.loads(_data)   # type: dict
-                    logger.debug(_data)
-                    if _data.get('data') == 'add':
-                        game.add()
+                # for _data in data.split('}'):       # type: str
+                #     if _data == '':
+                #         continue
+                #     _data += '}'
+                #     _data = json.loads(_data)   # type: dict
+                #     logger.debug(_data)
+                #     if _data.get('data') == 'add':
+                #         game.add()
 
             elif r is pipe_server:
-                logger.error('connect中的消息: 接受键盘输入并发送给服务端')
                 # 接受键盘输入并发送给服务端
                 conn, addr = pipe_server.accept()
                 data = conn.recv(BUFFERSIZE)
@@ -47,17 +46,6 @@ def connect(sock_client, pipe_server, game_inst):
 
 def get_name():
     return input("输入你的昵称: ")
-
-
-class TestGame:
-    def __init__(self):
-        self.data = {'mid': 0}
-
-    def get(self):
-        return self.data
-
-    def add(self):
-        self.data['mid'] += 1
 
 
 class MyManager(BaseManager):
@@ -76,13 +64,21 @@ def join_lobby(setting):
     pipe_server = server((setting.get('HOST', 'SOCKET_HOST'), CLI_PIPE_PORT))
     # 开始一个子进程，执行connect函数
 
-    MyManager.register('GameInst', TestGame)
-    manager = MyManager()
-    manager.start()
-    game_inst = manager.GameInst()      # type: TestGame
+    MyManager.register('DesktopInst')
+    manager = MyManager(address=('127.0.0.1', 6666), authkey=b'abracadabra')
+    manager.connect()
+    game_inst = manager.DesktopInst()      # type: Desktop
 
     p = Process(target=connect, args=(sock_client, pipe_server, game_inst))
     p.daemon = True
     p.start()
     c = InputCycle(setting, name=name, game_inst=game_inst)
-    c.input_cycle2(sock_client, pipe_server, setting.get('HOST', 'SOCKET_HOST'), CLI_PIPE_PORT, p)
+    c.input_cycle(sock_client, pipe_server, setting.get('HOST', 'SOCKET_HOST'), CLI_PIPE_PORT, p)
+    # while True:
+    #     _input = input('->')
+    #     if _input == 'exit':
+    #         p.terminate()
+    #         sock_client.close()
+    #         pipe_server.close()
+    #         break
+
