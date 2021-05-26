@@ -17,7 +17,7 @@ class MyManager(BaseManager):
 
 class HostMgr:
     def __init__(self, _sock_server, _pipe_server, game_inst):
-        self.game = game_inst   # type: Desktop
+        self.game = game_inst  # type: Desktop
         self.sock_server = _sock_server
         self.pipe_server = _pipe_server
         self.rlist = [_sock_server, _pipe_server]
@@ -39,7 +39,7 @@ class HostMgr:
                     # 接收键盘输入并发送到所有客户端去
                     conn, addr = self.pipe_server.accept()
                     _data = conn.recv(BUFFERSIZE)
-                    self.logger.info('接受键盘输入')      # 服务端输入add的时候走到这里
+                    self.logger.info('接受键盘输入')  # 服务端输入add的时候走到这里
                     for c in self.rlist[2:]:
                         c.send(_data)
                     conn.close()
@@ -54,7 +54,6 @@ class HostMgr:
                         if json.loads(_data).get('data') == '进入了房间。':
                             user = json.loads(_data).get('user')
                             self.game.add_player(user)
-                            self.game.draw(user)
                             ret = {"id": random.randint(0, 10), 'msg': f'{user}抽了2张牌。'}
                         else:
                             ret = {"id": random.randint(0, 10), 'msg': 'test'}
@@ -94,16 +93,17 @@ def create_lobby(config: str):
     MyManager.register('DesktopInst', Desktop)
     manager = MyManager()
     manager.start()
-    game_inst = manager.DesktopInst()      # type: Desktop
+    game_inst = manager.DesktopInst()  # type: Desktop
 
     p1 = Process(target=listen, args=(sock_server, pipe_server, game_inst))
-    p2 = Process(target=remote_manager, args=(game_inst, ))
+    p2 = Process(target=remote_manager, args=(game_inst,))
     p1.daemon = True
     p1.start()
     p2.daemon = True
     p2.start()
     logging.basicConfig(level=logging.NOTSET, format='%(asctime)s - 服务端主循环 - %(levelname)s: %(message)s')
     logger = logging.getLogger()
+    print(game_inst.get_turn())
     # while True:
     #     _input = input('->')
     #     if _input == 'exit':
@@ -113,6 +113,6 @@ def create_lobby(config: str):
     #         break
     #     if _input == 'turn':
     #         logger.info(game_inst.get_turn())
-    c = InputCycle(setting, name='房主大人', setting_path=config, game_inst=game_inst)
+    c = InputCycle(setting, name='服务端主进程', setting_path=config, game_inst=game_inst)
     c.input_cycle(sock_server, pipe_server,
-                   setting.get('HOST', 'SOCKET_HOST'), setting.getint('HOST', 'SER_PIPE_PORT'), p1, p2)
+                  setting.get('HOST', 'SOCKET_HOST'), setting.getint('HOST', 'SER_PIPE_PORT'), p1=p1, p2=p2)

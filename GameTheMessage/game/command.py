@@ -5,23 +5,41 @@ import os
 import configparser
 from GameTheMessage.game.game_msg import MsgBuilder
 from GameTheMessage.lobby.settings import client
+from GameTheMessage.game.desktop import Desktop
+
 
 QUIT_COMMAND = 'quit.'
 
 
 class CommandBase:
-    @staticmethod
-    def is_command(cmd):
-        raise NotImplementedError
+    def __init__(self, name):
+        self.name = name
 
     @staticmethod
-    def run(cmd):
+    def beautiful_table(table_data: list):
+        table = AsciiTable(table_data)
+        print(table.table)
+
+    def is_command(self, cmd):
         raise NotImplementedError
+
+    def run(self, cmd):
+        # if cmd in ['help', 'desktop', 'cls', 'cards', 'character']:
+        #     eval(f'PrivateCommand.{cmd}()')
+        #     return
+        # if cmd.split(' ')[0] in ['replay', 'tag']:
+        #     func = getattr(PrivateCommand, cmd.split(' ')[0])
+        #     func(cmd)
+        #     return
+        if '__self__' in dir(eval(f'self.{cmd}')):  # 普通方法
+            func = getattr(PrivateCommand, cmd.split(' ')[0])
+            func(cmd)
+        else:
+            eval(f'self.{cmd}()')
 
 
 class HostCommand(CommandBase):
-    @staticmethod
-    def is_command(cmd):
+    def is_command(self, cmd):
         _cmd = [str(att) for att in dir(HostCommand) if not att.startswith('__')]
         return cmd.split(' ')[0] in _cmd
 
@@ -75,29 +93,9 @@ class HostCommand(CommandBase):
         pipe_client.send(builder.encode('system', 'game init', 0, 'init'))
         pipe_client.close()
 
-    @staticmethod
-    def run(cmd):
-        pass
-
 
 class PrivateCommand(CommandBase):
-    @staticmethod
-    def run(cmd):
-        if cmd in ['help', 'desktop', 'cls', 'cards', 'character']:
-            eval(f'PrivateCommand.{cmd}()')
-            return
-        if cmd.split(' ')[0] in ['replay', 'tag']:
-            func = getattr(PrivateCommand, cmd.split(' ')[0])
-            func(cmd)
-            return
-
-    @staticmethod
-    def beautiful_table(table_data: list):
-        table = AsciiTable(table_data)
-        print(table.table)
-
-    @staticmethod
-    def is_command(cmd):
+    def is_command(self, cmd):
         _cmd = [str(att) for att in dir(PrivateCommand) if not att.startswith('__')]
         return cmd.split(' ')[0] in _cmd
 
@@ -119,11 +117,6 @@ class PrivateCommand(CommandBase):
         PrivateCommand.beautiful_table(h)
 
     @staticmethod
-    def desktop():
-        """输出当前桌面"""
-        pass
-
-    @staticmethod
     def cls():
         """清空记录"""
         os.system('cls')
@@ -131,11 +124,6 @@ class PrivateCommand(CommandBase):
     @staticmethod
     def replay(turn=0):
         """回放数回合的记录"""
-        pass
-
-    @staticmethod
-    def cards():
-        """查看自己的人物卡及手牌"""
         pass
 
     @staticmethod
@@ -150,8 +138,7 @@ class PrivateCommand(CommandBase):
 
 
 class PublicCommand(CommandBase):
-    @staticmethod
-    def is_command(cmd):
+    def is_command(self, cmd):
         _cmd = [str(att) for att in dir(PublicCommand) if not att.startswith('__')]
         return cmd.split(' ')[0] in _cmd
 
@@ -160,6 +147,22 @@ class PublicCommand(CommandBase):
         """请求长考"""
         pass
 
-    @staticmethod
-    def run(cmd):
-        pass
+
+class GameInstCommand(CommandBase):
+    """远程进程类共享 对公共信息的类直接同步"""
+    def is_command(self, cmd):
+        _cmd = [str(att) for att in dir(GameInstCommand) if not att.startswith('__')]
+        return cmd.split(' ')[0] in _cmd
+
+    def desktop(self, inst: Desktop):
+        """输出当前桌面"""
+        print(inst.desktop())
+        self.beautiful_table([[],[]])
+        return inst.desktop()
+
+    def card(self, inst: Desktop):
+        print(inst.card(self.name))
+        return inst.card(self.name)
+
+    def get_turn(self, inst: Desktop):
+        return inst.get_turn()

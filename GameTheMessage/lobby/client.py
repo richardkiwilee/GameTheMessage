@@ -50,7 +50,8 @@ def get_name():
 
 class MyManager(BaseManager):
     pass
-
+class MyManager2(BaseManager):
+    pass
 
 def join_lobby(setting):
     # 使用get_name函数获得用户名
@@ -68,12 +69,13 @@ def join_lobby(setting):
     manager = MyManager(address=('127.0.0.1', 6666), authkey=b'abracadabra')
     manager.connect()
     game_inst = manager.DesktopInst()      # type: Desktop
-
+    print('111111', game_inst.get_turn())
     p = Process(target=connect, args=(sock_client, pipe_server, game_inst))
     p.daemon = True
     p.start()
+
     c = InputCycle(setting, name=name, game_inst=game_inst)
-    c.input_cycle(sock_client, pipe_server, setting.get('HOST', 'SOCKET_HOST'), CLI_PIPE_PORT, p, game_inst=game_inst)
+    c.input_cycle(sock_client, pipe_server, setting.get('HOST', 'SOCKET_HOST'), CLI_PIPE_PORT, p1=p, p2=None)
     # while True:
     #     _input = input('->')
     #     if _input == 'exit':
