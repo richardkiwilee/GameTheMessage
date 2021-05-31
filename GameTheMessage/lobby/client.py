@@ -9,7 +9,7 @@ from GameTheMessage.game.desktop import Desktop
 from GameTheMessage.game.input_cycle import InputCycle
 
 
-def connect(sock_client, pipe_server, game_inst):
+def connect(sock_client, pipe_server, game_inst, name):
     game = game_inst        # type: Desktop
     # IO多路复用：循环监听套接字
     logging.basicConfig(level=logging.NOTSET, format='%(asctime)s - %(filename)s - %(levelname)s: %(message)s')
@@ -33,6 +33,12 @@ def connect(sock_client, pipe_server, game_inst):
                 #     logger.debug(_data)
                 #     if _data.get('data') == 'add':
                 #         game.add()
+                msg = json.loads(data)
+                if msg.get('target') is not None:
+                    if name not in msg.get('target').split(','):
+                        logger.info('不是给我的消息')
+                    else:
+                        logger.info('给我的消息，进行处理')
 
             elif r is pipe_server:
                 # 接受键盘输入并发送给服务端
@@ -50,8 +56,11 @@ def get_name():
 
 class MyManager(BaseManager):
     pass
+
+
 class MyManager2(BaseManager):
     pass
+
 
 def join_lobby(setting):
     # 使用get_name函数获得用户名
@@ -69,8 +78,7 @@ def join_lobby(setting):
     manager = MyManager(address=('127.0.0.1', 6666), authkey=b'abracadabra')
     manager.connect()
     game_inst = manager.DesktopInst()      # type: Desktop
-    print('111111', game_inst.get_turn())
-    p = Process(target=connect, args=(sock_client, pipe_server, game_inst))
+    p = Process(target=connect, args=(sock_client, pipe_server, game_inst, name))
     p.daemon = True
     p.start()
 
@@ -83,4 +91,3 @@ def join_lobby(setting):
     #         sock_client.close()
     #         pipe_server.close()
     #         break
-

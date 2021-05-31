@@ -1,6 +1,6 @@
 import logging
 import logging.config
-from terminaltables import AsciiTable
+from terminaltables import AsciiTable, SingleTable, DoubleTable
 import os
 import configparser
 from GameTheMessage.game.game_msg import MsgBuilder
@@ -17,7 +17,7 @@ class CommandBase:
 
     @staticmethod
     def beautiful_table(table_data: list):
-        table = AsciiTable(table_data)
+        table = DoubleTable(table_data)
         print(table.table)
 
     def is_command(self, cmd):
@@ -31,11 +31,12 @@ class CommandBase:
         #     func = getattr(PrivateCommand, cmd.split(' ')[0])
         #     func(cmd)
         #     return
-        if '__self__' in dir(eval(f'self.{cmd}')):  # 普通方法
-            func = getattr(PrivateCommand, cmd.split(' ')[0])
+        g = cmd.split(' ')
+        if '__self__' in dir(eval(f'self.{g[0]}')):  # 普通方法
+            func = getattr(self, g[0])
             func(cmd)
         else:
-            eval(f'self.{cmd}()')
+            eval(f'self.{g[0]}({cmd})')
 
 
 class HostCommand(CommandBase):
@@ -95,12 +96,16 @@ class HostCommand(CommandBase):
 
 
 class PrivateCommand(CommandBase):
+    def __init__(self, name):
+        super().__init__(name)
+        self.tags = {}
+
     def is_command(self, cmd):
         _cmd = [str(att) for att in dir(PrivateCommand) if not att.startswith('__')]
         return cmd.split(' ')[0] in _cmd
 
     @staticmethod
-    def help():
+    def help(cmd=None):
         """查看帮助"""
         h = [['命令类别', '命令格式', '描述'],
              ['房主', 'edit', '编辑游戏设置'],
@@ -117,24 +122,30 @@ class PrivateCommand(CommandBase):
         PrivateCommand.beautiful_table(h)
 
     @staticmethod
-    def cls():
+    def cls(cmd=None):
         """清空记录"""
         os.system('cls')
 
     @staticmethod
-    def replay(turn=0):
+    def replay(cmd):
         """回放数回合的记录"""
+        turn = cmd.split(' ')[1]
         pass
 
     @staticmethod
-    def character(name):
+    def character(cmd):
         """查看一张人物卡"""
-        pass
+        name = cmd.split(' ')[1]
 
-    @staticmethod
-    def tag(name, identity):
+    def tag(self, cmd):
         """标记一个角色的身份"""
-        pass
+        name = cmd.split(' ')[1]
+        try:
+            identity = cmd.split(' ')[2]
+            self.tags[name] = identity
+        except IndexError:
+            if name in self.tags.keys():
+                self.tags.__delitem__(name)
 
 
 class PublicCommand(CommandBase):
@@ -161,8 +172,11 @@ class GameInstCommand(CommandBase):
         return inst.desktop()
 
     def card(self, inst: Desktop):
+        # 查看自己手牌
         print(inst.card(self.name))
         return inst.card(self.name)
 
-    def get_turn(self, inst: Desktop):
-        return inst.get_turn()
+    def used(self, inst: Desktop):
+        # 查看弃牌堆
+        print(inst.used())
+        return inst.used()

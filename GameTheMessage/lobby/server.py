@@ -9,6 +9,7 @@ from multiprocessing.managers import BaseManager
 import random
 from GameTheMessage.game.desktop import Desktop
 from GameTheMessage.game.input_cycle import InputCycle
+from GameTheMessage.__version__ import version
 
 
 class MyManager(BaseManager):
@@ -52,9 +53,10 @@ class HostMgr:
                         # 服务端接受客户端的消息 进行处理 后将结果发送到所有客户端
                         # ret = handle(_data)
                         if json.loads(_data).get('data') == '进入了房间。':
+                            # 校验版本号
                             user = json.loads(_data).get('user')
                             self.game.add_player(user)
-                            ret = {"id": random.randint(0, 10), 'msg': f'{user}抽了2张牌。'}
+                            ret = {"id": 0, 'msg': f'version={version}', 'target': user}
                         else:
                             ret = {"id": random.randint(0, 10), 'msg': 'test'}
                         for c in self.rlist[2:]:
@@ -103,7 +105,6 @@ def create_lobby(config: str):
     p2.start()
     logging.basicConfig(level=logging.NOTSET, format='%(asctime)s - 服务端主循环 - %(levelname)s: %(message)s')
     logger = logging.getLogger()
-    print(game_inst.get_turn())
     # while True:
     #     _input = input('->')
     #     if _input == 'exit':

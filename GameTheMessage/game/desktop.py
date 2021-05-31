@@ -55,3 +55,7 @@ class Desktop:
          ['情报2', 'NULL', 'NULL...'],
          ['手牌4', '手牌3','手牌2...'] ]
         return rt
+
+    def used(self) -> list:
+        # 查看弃牌堆
+        return self.used
