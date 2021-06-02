@@ -17,7 +17,7 @@ class MyManager(BaseManager):
 
 
 class HostMgr:
-    def __init__(self, _sock_server, _pipe_server, game_inst):
+    def __init__(self, _sock_server, _pipe_server, game_inst: Desktop):
         self.game = game_inst  # type: Desktop
         self.sock_server = _sock_server
         self.pipe_server = _pipe_server
@@ -29,6 +29,7 @@ class HostMgr:
         self.logger.info('房间已经建立。')
 
     def start(self):
+        ready_status = []
         while True:
             rs, ws, xs = select(self.rlist, self.wlist, self.xlist)
             for r in rs:
@@ -57,6 +58,11 @@ class HostMgr:
                             user = json.loads(_data).get('user')
                             self.game.add_player(user)
                             ret = {"id": 0, 'msg': f'version={version}', 'target': user}
+                        elif json.loads(_data).get('data') == 'ready':
+                            user = json.loads(_data).get('user')
+                            ready_status.append(user)
+                            if set(ready_status) == set(self.game.get_players()):
+                                self.logger.info('所有玩家准备完成，游戏开始。')
                         else:
                             ret = {"id": random.randint(0, 10), 'msg': 'test'}
                         for c in self.rlist[2:]:
@@ -68,7 +74,7 @@ class HostMgr:
                         self.rlist.remove(r)
 
 
-def listen(_sock_server, _pipe_server, inst):
+def listen(_sock_server, _pipe_server, inst: Desktop):
     # IO多路复用：循环监听套接字
     h = HostMgr(_sock_server, _pipe_server, inst)
     h.start()

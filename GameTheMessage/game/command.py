@@ -7,7 +7,6 @@ from GameTheMessage.game.game_msg import MsgBuilder
 from GameTheMessage.lobby.settings import client
 from GameTheMessage.game.desktop import Desktop
 
-
 QUIT_COMMAND = 'quit.'
 
 
@@ -31,12 +30,15 @@ class CommandBase:
         #     func = getattr(PrivateCommand, cmd.split(' ')[0])
         #     func(cmd)
         #     return
-        g = cmd.split(' ')
-        if '__self__' in dir(eval(f'self.{g[0]}')):  # 普通方法
-            func = getattr(self, g[0])
-            func(cmd)
-        else:
-            eval(f'self.{g[0]}({cmd})')
+        try:
+            g = cmd.split(' ')
+            if '__self__' in dir(eval(f'self.{g[0]}')):  # 普通方法
+                func = getattr(self, g[0])
+                func(cmd)
+            else:
+                eval(f'self.{g[0]}({cmd})')
+        except Exception as ex:
+            logging.error(f'command:"{cmd}" error occur: {ex}')
 
 
 class HostCommand(CommandBase):
@@ -47,6 +49,7 @@ class HostCommand(CommandBase):
     @staticmethod
     def edit(setting: configparser.ConfigParser, setting_path=None):
         """编辑游戏设置"""
+
         def saved_input(section: str, option: str, desc: str, c: type, _setting: configparser.ConfigParser):
             _input = input(f'{section}[{desc}:{c.__name__}]({_setting.get(section, option)})')
             while True:
@@ -60,6 +63,7 @@ class HostCommand(CommandBase):
                         _input = input(f'\r{section}[{desc}:{c.__name__}]({_setting.get(section, option)})')
                 else:
                     break
+
         if setting_path is None:
             logging.warning('非房主无法修改配置参数。')
             return
@@ -158,9 +162,14 @@ class PublicCommand(CommandBase):
         """请求长考"""
         pass
 
+    @staticmethod
+    def ready():
+        """玩家准备"""
+
 
 class GameInstCommand(CommandBase):
     """远程进程类共享 对公共信息的类直接同步"""
+
     def is_command(self, cmd):
         _cmd = [str(att) for att in dir(GameInstCommand) if not att.startswith('__')]
         return cmd.split(' ')[0] in _cmd
@@ -168,7 +177,7 @@ class GameInstCommand(CommandBase):
     def desktop(self, inst: Desktop):
         """输出当前桌面"""
         print(inst.desktop())
-        self.beautiful_table([[],[]])
+        self.beautiful_table([[], []])
         return inst.desktop()
 
     def card(self, inst: Desktop):

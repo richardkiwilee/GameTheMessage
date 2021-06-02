@@ -45,3 +45,13 @@ class Phase(enum):
     RECEIVE = 6     # 宣告接收情报
     ACTION2 = 7     # 行动阶段2
     TURNEND = 8     # 回合结束
+
+
+class MsgType(enum):
+    # 消息类型
+    DEBUG = 0       # 系统消息：debug
+    INFO = 1        # 系统信息：info
+    WARNING = 2     # 系统信息：warning
+    ERROR = 3       # 系统消息：error
+    EVENT = 4       # 服务器向客户端发送事件标记 用于阶段推进、响应点
+    REFRESH = 5     # 服务器向客户端表示桌面变更 需要刷新

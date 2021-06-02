@@ -10,6 +10,10 @@ class Desktop:
         self.player_order = None    # 玩家行动列表
         self.player_identity = {}   # 保存玩家身份
         self.response_stack = []    # 响应栈
+        self.current_msgid = 0
+
+    def get_cmid(self):
+        return self.current_msgid
 
     def get_turn(self):
         """获得当前回合数"""
@@ -59,3 +63,6 @@ class Desktop:
     def used(self) -> list:
         # 查看弃牌堆
         return self.used
+
+    def get_players(self) -> list:
+        return self.players

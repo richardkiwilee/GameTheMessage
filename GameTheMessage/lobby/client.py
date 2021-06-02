@@ -7,6 +7,7 @@ import logging.config
 from multiprocessing.managers import BaseManager
 from GameTheMessage.game.desktop import Desktop
 from GameTheMessage.game.input_cycle import InputCycle
+from GameTheMessage.lobby.msg_parser import MsgPhaser
 
 
 def connect(sock_client, pipe_server, game_inst, name):
@@ -14,6 +15,7 @@ def connect(sock_client, pipe_server, game_inst, name):
     # IO多路复用：循环监听套接字
     logging.basicConfig(level=logging.NOTSET, format='%(asctime)s - %(filename)s - %(levelname)s: %(message)s')
     logger = logging.getLogger()
+    parser = MsgPhaser(name)
     rlist = [sock_client, pipe_server]
     wlist = []
     xlist = []
@@ -34,17 +36,14 @@ def connect(sock_client, pipe_server, game_inst, name):
                 #     if _data.get('data') == 'add':
                 #         game.add()
                 msg = json.loads(data)
-                if msg.get('target') is not None:
-                    if name not in msg.get('target').split(','):
-                        logger.info('不是给我的消息')
-                    else:
-                        logger.info('给我的消息，进行处理')
+                parser.parse(msg)
 
             elif r is pipe_server:
                 # 接受键盘输入并发送给服务端
                 conn, addr = pipe_server.accept()
                 data = conn.recv(BUFFERSIZE)
-                j = json.dumps({'user': 'client', 'data': data.decode().split('\n')[0], 'type': 'system', 'func': 'input'})
+                j = json.dumps({'user': name, 'data': data.decode().split('\n')[0],
+                                'id': 0})
                 data = bytes(j, "UTF-8")
                 sock_client.send(data)
                 conn.close()
@@ -55,10 +54,6 @@ def get_name():
 
 
 class MyManager(BaseManager):
-    pass
-
-
-class MyManager2(BaseManager):
     pass
 
 

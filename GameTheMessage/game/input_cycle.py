@@ -46,7 +46,7 @@ class InputCycle:
                 if self.public_command.is_command(data):
                     pipe_client = client((pipe_host, pipe_port))
                     # pipe_client.send(bytes(data, "UTF-8"))
-                    pipe_client.send(bytes(json.dumps({'data': 'add'}), "UTF-8"))
+                    pipe_client.send(bytes(data, "UTF-8"))
                     pipe_client.close()
                 elif self.private_command.is_command(data):
                     self.private_command.run(data)
