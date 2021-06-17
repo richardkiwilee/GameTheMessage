@@ -13,7 +13,7 @@ def cli():
 @click.option('--config', '-c', help='配置文件路径。', default=r"config\GameTheMessage-config.ini")
 def start(config: str):
     """主持一个对战"""
-    from GameTheMessage.lobby.server import create_lobby
+    from src.lobby.server import create_lobby
     create_lobby(config)
 
 
@@ -23,7 +23,7 @@ def start(config: str):
 @click.option('--config', '-c', help='配置文件路径。', default=r"config\GameTheMessage-config.ini")
 def join(host, port, config):
     """加入一个对战"""
-    from GameTheMessage.lobby.client import join_lobby
+    from src.lobby.client import join_lobby
     cf = configparser.ConfigParser(allow_no_value=True)
     cf.read(config)
     cf.set('HOST', 'SOCKET_HOST', host)

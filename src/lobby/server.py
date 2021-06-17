@@ -1,15 +1,16 @@
 from select import select
 from multiprocessing import Process
-from GameTheMessage.lobby.settings import *
+from src.lobby.settings import *
 import logging
 import logging.config
 import json
 import configparser
 from multiprocessing.managers import BaseManager
 import random
-from GameTheMessage.game.desktop import Desktop
-from GameTheMessage.game.input_cycle import InputCycle
-from GameTheMessage.__version__ import version
+from src.game.desktop import Desktop
+from src.game.input_cycle import InputCycle
+from src.__version__ import version
+from src.lobby.lobby_mgr import LobbyMgr
 
 
 class MyManager(BaseManager):
@@ -19,6 +20,7 @@ class MyManager(BaseManager):
 class HostMgr:
     def __init__(self, _sock_server, _pipe_server, game_inst: Desktop):
         self.game = game_inst  # type: Desktop
+        self.lobby_mgr = LobbyMgr()
         self.sock_server = _sock_server
         self.pipe_server = _pipe_server
         self.rlist = [_sock_server, _pipe_server]
@@ -56,13 +58,22 @@ class HostMgr:
                         if json.loads(_data).get('data') == '进入了房间。':
                             # 校验版本号
                             user = json.loads(_data).get('user')
-                            self.game.add_player(user)
-                            ret = {"id": 0, 'msg': f'version={version}', 'target': user}
+                            if user in self.game.get_players():
+                                self.logger.warning(f'重复的用户名： {user}')
+                                ret = {"id": 0, 'msg': f'ERROR: 0x4AE1', 'target': user}
+                            else:
+                                self.game.add_player(user)
+                                ret = {"id": 0, 'msg': f'version={version}', 'target': user}
                         elif json.loads(_data).get('data') == 'ready':
                             user = json.loads(_data).get('user')
-                            ready_status.append(user)
-                            if set(ready_status) == set(self.game.get_players()):
-                                self.logger.info('所有玩家准备完成，游戏开始。')
+                            if user in ready_status:
+                                self.logger.info(f'{user}已经处于准备状态了.')
+                            else:
+                                ready_status.append(user)
+                                if set(ready_status) == set(self.game.get_players()) and len(self.game.get_players()) >= 3:
+                                    self.logger.info('所有玩家准备完成，游戏开始。')
+                                else:
+                                    self.logger.info(f'{user} 进入准备状态')
                         else:
                             ret = {"id": random.randint(0, 10), 'msg': 'test'}
                         for c in self.rlist[2:]:
@@ -121,5 +132,8 @@ def create_lobby(config: str):
     #     if _input == 'turn':
     #         logger.info(game_inst.get_turn())
     c = InputCycle(setting, name='服务端主进程', setting_path=config, game_inst=game_inst)
+    c.apply_host_command()
+    c.apply_isnt_command()
+    c.apply_private_command()
     c.input_cycle(sock_server, pipe_server,
                   setting.get('HOST', 'SOCKET_HOST'), setting.getint('HOST', 'SER_PIPE_PORT'), p1=p1, p2=p2)

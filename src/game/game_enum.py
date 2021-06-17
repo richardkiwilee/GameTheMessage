@@ -13,6 +13,14 @@ class Intelligence(enum):
     SECRET = 1  # 密电
     DIRECT = 2  # 直达
     TEXT = 3    # 文本
+    ANY = 0     # 需要指定
+
+
+class Color(enum):
+    # 情报颜色
+    RED = 0x100
+    BLUE = 0x010
+    BLACK = 0x001
 
 
 class Skill(enum):

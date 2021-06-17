@@ -5,9 +5,9 @@ import json
 import logging
 import logging.config
 from multiprocessing.managers import BaseManager
-from GameTheMessage.game.desktop import Desktop
-from GameTheMessage.game.input_cycle import InputCycle
-from GameTheMessage.lobby.msg_parser import MsgPhaser
+from src.game.desktop import Desktop
+from src.game.input_cycle import InputCycle
+from src.lobby.msg_parser import MsgPhaser
 
 
 def connect(sock_client, pipe_server, game_inst, name):
@@ -78,6 +78,10 @@ def join_lobby(setting):
     p.start()
 
     c = InputCycle(setting, name=name, game_inst=game_inst)
+    c.apply_host_command()
+    c.apply_isnt_command()
+    c.apply_private_command()
+    c.apply_public_command()
     c.input_cycle(sock_client, pipe_server, setting.get('HOST', 'SOCKET_HOST'), CLI_PIPE_PORT, p1=p, p2=None)
     # while True:
     #     _input = input('->')

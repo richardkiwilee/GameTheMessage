@@ -3,9 +3,9 @@ import logging.config
 from terminaltables import AsciiTable, SingleTable, DoubleTable
 import os
 import configparser
-from GameTheMessage.game.game_msg import MsgBuilder
-from GameTheMessage.lobby.settings import client
-from GameTheMessage.game.desktop import Desktop
+from src.game.game_msg import MsgBuilder
+from src.lobby.settings import client
+from src.game.desktop import Desktop
 
 QUIT_COMMAND = 'quit.'
 
